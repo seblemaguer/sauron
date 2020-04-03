@@ -77,6 +77,11 @@ joining/leaving IRC channels - when such an event comes the
 priority of the event will raised to at least
 `sauron-min-priority'.")
 
+(defvar sauron-insensitivity-handler nil
+  "The handler function which forces the priority to stay the
+  same if it returns t. This function is taking 2 parameters: the
+  message (MSG) and the properties (PROPS)")
+
 (defvar sauron-nick-insensitivity 60
   "The time (in seconds) we give lower priority to the events
 coming from some nick after something has come in. This is to
@@ -355,7 +360,10 @@ timestamp."
 3) if prio > 5, prio = 5
 Returns the new priority."
   (let ((prio prio) (nick (plist-get props :sender)))
-    (if (and nick (not (sr-fresh-nick-event nick))) ;;
+    (if (and nick
+             (not (and sauron-insensitivity-handler
+                       (funcall sauron-insensitivity-handler msg props)))
+             (not (sr-fresh-nick-event nick))) ;;
       (setq prio 2) ;; set prio to 2 for nicks we got events for recently
       (progn
 	(when (sr-pattern-matches msg sauron-watch-patterns 'string-match)
